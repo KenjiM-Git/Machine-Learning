@@ -1,0 +1,129 @@
+import pandas as pd
+import numpy as np
+from scipy.optimize import minimize
+import matplotlib.pyplot as plt
+import scipy.io
+
+
+#Complete the function below
+def pca(X):
+    m = np.size(X,0)    
+    n = np.size(X,1)
+    U = np.zeros(n)
+    S = np.zeros(n)
+    #print(U,S)
+    #print(m,n)
+    #Sigma = np.dot((1/m),np.dot(X.transpose(),X))
+    Sigma = (1/m)*np.dot(X.transpose(),X)
+    U, S, V = np.linalg.svd(Sigma)
+    return U,S
+
+#Complete the function below
+def projectData(X, U, K):
+    Z = np.zeros((np.size(X,0),K))
+    m = np.size(X,0)
+    n = np.size(X,1)
+    for i in range(m):
+        x = X[i].transpose()
+        U_reduce = U[:,:K]
+        #print(U)
+        Z[i] = np.dot(U_reduce.transpose(),x)
+    return Z
+
+#Complete the function below
+def recoverData(Z, U, K):
+    X_rec = np.zeros((np.size(Z,0),np.size(U,0)))
+    m = np.size(Z,0)
+    n = np.size(U,0)
+    for i in range(m):
+        for j in range(n):
+            V = Z[i].transpose()
+            #Vtest = V.transpose()
+            #Utest = U[j,:K]
+            #print(Vtest, Utest)
+            #X_rec[i,j] = np.dot(V.transpose(),Utest.transpose())
+            X_rec[i,j] = np.dot(V.transpose(),U[j,:K].transpose())
+    return X_rec
+
+
+def featureNormalize(X):
+	mu = np.mean(X,axis=0)
+	sigma = np.std(X,axis=0)
+	normalized_X = np.divide(X - mu,sigma)
+
+	return (normalized_X, mu, sigma)
+
+def displayData(X):
+    
+    num_images = len(X)
+    rows = int(num_images**.5)
+    cols = int(num_images**.5)
+    fig, ax = plt.subplots(rows,cols,sharex=True,sharey=True)
+    img_num = 0
+
+    for i in range(rows):
+        for j in range(cols):
+            # Convert column vector into 32x232 pixel matrix
+            #  transpose
+            img = X[img_num,:].reshape(32,32).T
+            ax[i][j].imshow(img,cmap='gray')
+            img_num += 1
+
+    return (fig, ax)
+	
+raw_mat = scipy.io.loadmat("data1.mat")
+X = raw_mat.get("X")
+plt.cla()
+plt.plot(X[:,0], X[:,1], 'bo')
+plt.show()
+
+X_norm, mu, sigma = featureNormalize(X)
+U, S = pca(X_norm)
+print("U[:,1] = ", U[0,0], U[1,0])
+print("(you should expect to see -0.707107 -0.707107)")
+
+plt.cla()
+plt.plot(X_norm[:,0], X_norm[:,1], 'bo')
+plt.show()
+
+K = 1
+Z = projectData(X_norm, U, K)
+print("Projection of the first example: \n", Z[0]);
+print("(this value should be about 1.481274)");
+X_rec = recoverData(Z, U, K)
+print("Approximation of the first example: \n", X_rec[0, 0], X_rec[0, 1])
+print("(this value should be about  -1.047419 -1.047419)")
+
+plt.cla()
+plt.plot(X_norm[:,0], X_norm[:,1], 'bo')
+plt.plot(X_rec[:,0], X_rec[:,1], 'rx')
+plt.show()
+
+# Loading and Visualizing Face Data
+raw_mat = scipy.io.loadmat("faces.mat")
+X = raw_mat.get("X")
+face_grid, ax = displayData(X[:100, :])
+plt.show()
+
+X_norm, mu, sigma = featureNormalize(X)
+U, S = pca(X_norm)
+
+face_grid, ax = displayData(U[:,:36].T)
+plt.show()
+
+# Dimension Reduction on Faces
+K = 100
+Z = projectData(X_norm, U, K)
+print("The projected data Z has a size of \n", np.size(Z))
+#Visualization of Faces after PCA
+K = 100
+X_rec  = recoverData(Z, U, K)
+
+plt.close()
+plt.cla()
+f, (ax1, ax2) = plt.subplots(2, sharex=True, sharey=True)
+f, ax1 = displayData(X_norm[:100,:])
+f, ax2 = displayData(X_rec[:100,:])
+plt.show()
+
+print("done")
