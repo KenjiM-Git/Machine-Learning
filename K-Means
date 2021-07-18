@@ -1,0 +1,101 @@
+import pandas as pd
+import numpy as np
+from scipy.optimize import minimize
+import scipy.io
+import matplotlib.pyplot as plt
+
+
+#Complete the function below
+def computeCentroids(X, idx, K):
+    m = np.size(X,0)
+    n = np.size(X,1)
+    
+    centroids = np.zeros((K,n))
+    for j in range(K):
+        #p = X(find(idx()==j))
+        indices = [i for i, e in enumerate(idx[:]) if e == j]
+        #p = list([X[l] for l in [i for i, e in enumerate(idx[:]) if e == j]])
+        p = list(map(X.__getitem__,indices))
+        #print(p)
+        centroids[j] = np.sum(p, axis=0)/np.size(p,0)
+    return centroids
+
+#Complete the function below
+def kMeansInitCentroids(X, K):
+    #columns = np.size(X,1)
+    #print(columns)
+    #print(K)
+    #print(np.zeros((3,2)))
+    centroids = np.zeros((K,np.size(X,1)))
+
+    centroids = X[np.random.choice(X.shape[0], K)]
+    return centroids
+    
+    
+def findClosestCentroids(X, centroids):
+	K = np.size(centroids, 1)
+	idx = []
+
+	for i in range(len(X)):
+		norm = np.sum(((X[i] - centroids)**2), axis=1)
+		idx.append(norm.argmin())
+		
+	return idx   
+
+	
+
+def runKMeans(X, initial_centroids, max_iters, plot_progress=False):
+	K = np.size(initial_centroids, 0)
+	centroids = initial_centroids 
+	previous_centroids = centroids
+
+	for i in range(max_iters):
+         print("K-Means iteration", i, max_iters)
+         idx = findClosestCentroids(X, centroids)
+         if plot_progress:
+            plt.plot(X[:,0],X[:,1], 'bo')
+            plt.plot(centroids[:,0], centroids[:,1], 'rx')
+            plt.plot(previous_centroids[:,0], previous_centroids[:,1], 'gx')
+            plt.show()
+            previous_centroids = centroids
+            input("Press enter to continue.\n")
+            centroids = computeCentroids(X, idx, K)
+
+	return (centroids, idx)
+
+
+
+# Find Closest Centroids
+raw_mat = scipy.io.loadmat("ex1data.mat")
+X = raw_mat.get("X")
+
+# Select an initial set of centroids
+K = 3
+initial_centroids = np.array([[3, 3], [6, 2], [8, 5]])
+idx = findClosestCentroids(X, initial_centroids)
+print("Closest centroids for the first 3 examples: \n")
+print(idx[0]+1, idx[1]+1, idx[2]+1)
+
+print("\n(the closest centroids should be 1, 3, 2 respectively)\n")
+input('Program paused. Press enter to continue.\n')
+#Compute Means
+centroids = computeCentroids(X, idx, K)
+
+print("Centroids computed after initial finding of closest centroids: \n")
+print(centroids)
+print("\n(the centroids should be\n");
+print("   [ 2.428301 3.157924 ]\n");
+print("   [ 5.813503 2.633656 ]\n");
+print("   [ 7.119387 3.616684 ]\n\n");
+input('Program paused. Press enter to continue.\n')
+
+# K-means Clustering
+max_iters = 10
+initial_centroids = np.array([[3, 3], [6, 2], [8, 5]])
+#initial_centroids = kMeansInitCentroids(X, K)
+
+centroids, idx = runKMeans(X, initial_centroids, max_iters, plot_progress=True)
+
+print("\nK-Means Done.\n\n");
+
+input("Program paused. Press enter to continue.\n")
